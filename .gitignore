@@ -1,0 +1,6 @@
+_to_delete/
+*.log
+.idea/
+.vscode/
+node_modules/
+.env
