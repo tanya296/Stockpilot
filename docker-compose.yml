@@ -1,5 +1,6 @@
-# Local Postgres for development: run "docker compose up -d" in the stockpilot folder.
-# Matches the defaults in backend/src/main/resources/application.yml.
+# Runs the database, or the whole backend, locally.
+#   docker compose up -d db        -> only Postgres (use this while developing with mvnw)
+#   docker compose up -d --build   -> Postgres + the backend in a container, on http://localhost:8090
 services:
   db:
     image: postgres:16
@@ -11,5 +12,25 @@ services:
       - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d stockpilot"]
+      interval: 5s
+      retries: 10
+
+  api:
+    build: ./backend
+    depends_on:
+      db:
+        condition: service_healthy   # wait until Postgres actually accepts connections
+    environment:
+      # Inside Docker's network, containers reach each other by service name ("db"), not localhost.
+      DB_URL: jdbc:postgresql://db:5432/stockpilot
+      DB_USERNAME: postgres
+      DB_PASSWORD: postgres
+      JWT_SECRET: docker-local-secret-change-me-docker-local-secret
+      CORS_ORIGINS: http://localhost:5173
+    ports:
+      - "8090:8090"
+
 volumes:
   pgdata:
