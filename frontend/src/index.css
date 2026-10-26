@@ -1,5 +1,38 @@
 @import "tailwindcss";
 
+/* Inter is loaded in index.html; make it the default font everywhere. */
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+}
+
 body {
   @apply bg-slate-50 text-slate-900 antialiased;
+  /* Two soft colour glows in the corners so the page isn't flat grey. */
+  background-image:
+    radial-gradient(40rem 30rem at 100% 0%, rgb(99 102 241 / 0.08), transparent 70%),
+    radial-gradient(35rem 25rem at 0% 100%, rgb(168 85 247 / 0.07), transparent 70%);
+  background-attachment: fixed;
+}
+
+/* Gradient text, used for "Pilot" in the logo and page titles. */
+.text-gradient {
+  @apply bg-linear-to-r from-indigo-600 to-violet-600 bg-clip-text text-transparent;
+}
+
+/* Loading skeleton: a light shine that sweeps across grey bars. */
+@keyframes shimmer {
+  100% { transform: translateX(100%); }
+}
+.skeleton {
+  @apply relative overflow-hidden rounded-md bg-slate-200/70;
+}
+.skeleton::after {
+  content: "";
+  @apply absolute inset-0 -translate-x-full bg-linear-to-r from-transparent via-white/60 to-transparent;
+  animation: shimmer 1.4s infinite;
+}
+
+/* Respect users who turn animations off in their OS settings. */
+@media (prefers-reduced-motion: reduce) {
+  .skeleton::after { animation: none; }
 }

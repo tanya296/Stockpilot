@@ -1,12 +1,14 @@
 import { useEffect, useState } from 'react'
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
+import { motion } from 'framer-motion'
+import { Plus, Search } from 'lucide-react'
 import { api } from '../lib/api'
 import type { Page, Product } from '../lib/types'
 import { money } from '../lib/format'
 import { useAuth } from '../auth/AuthContext'
 import { ProductFormDialog } from '../components/ProductFormDialog'
-import { Badge, btn, Card, ErrorText, input, Loading, Pagination } from '../components/ui'
+import { Badge, btn, Card, ErrorText, input, Loading, PageHeader, Pagination, rowIn } from '../components/ui'
 
 type SortKey = 'name' | 'sku' | 'category' | 'unitPrice'
 
@@ -48,15 +50,16 @@ export function ProductsPage() {
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <h1 className="text-2xl font-semibold">Products</h1>
-        {hasRole('ADMIN') && <button className={btn.primary} onClick={() => setEditing('new')}>Add product</button>}
-      </div>
+      <PageHeader title="Products" subtitle="Everything you stock, across all warehouses."
+        action={hasRole('ADMIN') && <button className={btn.primary} onClick={() => setEditing('new')}><Plus size={16} />Add product</button>} />
 
       <Card>
         <div className="mb-3 flex flex-wrap gap-2">
-          <input className={`${input} max-w-xs`} placeholder="Search name or SKU…" value={search}
-            onChange={(e) => setSearch(e.target.value)} />
+          <div className="relative w-full max-w-xs">
+            <Search size={16} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+            <input className={`${input} pl-9`} placeholder="Search name or SKU…" value={search}
+              onChange={(e) => setSearch(e.target.value)} />
+          </div>
           <select className={`${input} max-w-[200px]`} value={category}
             onChange={(e) => { setCategory(e.target.value); setPage(0) }}>
             <option value="">All categories</option>
@@ -68,7 +71,7 @@ export function ProductsPage() {
           <>
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
-                <thead className="text-left text-slate-500">
+                <thead className="text-left text-xs uppercase tracking-wide text-slate-400">
                   <tr>
                     <Th k="sku" label="SKU" />
                     <Th k="name" label="Name" />
@@ -80,10 +83,10 @@ export function ProductsPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {products.data.content.map((p) => (
-                    <tr key={p.id} className="border-t">
-                      <td className="py-2 font-mono text-xs">{p.sku}</td>
-                      <td><Link to={`/products/${p.id}`} className="text-indigo-600 hover:underline">{p.name}</Link></td>
+                  {products.data.content.map((p, i) => (
+                    <motion.tr key={p.id} className="border-t border-slate-100 transition-colors hover:bg-indigo-50/40" {...rowIn(i)}>
+                      <td className="py-3 font-mono text-xs text-slate-500">{p.sku}</td>
+                      <td><Link to={`/products/${p.id}`} className="font-medium text-indigo-600 hover:underline">{p.name}</Link></td>
                       <td>{p.category}</td>
                       <td>{money(p.unitPrice)}</td>
                       <td>{p.totalQuantity}</td>
@@ -93,7 +96,7 @@ export function ProductsPage() {
                           <button className="text-slate-500 hover:text-indigo-600" onClick={() => setEditing(p)}>Edit</button>
                         </td>
                       )}
-                    </tr>
+                    </motion.tr>
                   ))}
                   {products.data.content.length === 0 && (
                     <tr><td colSpan={7} className="py-6 text-center text-slate-500">No products match.</td></tr>

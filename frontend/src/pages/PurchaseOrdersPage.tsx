@@ -1,12 +1,14 @@
 import { Fragment, useState } from 'react'
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
+import { motion } from 'framer-motion'
+import { Plus } from 'lucide-react'
 import { api, ApiError, patch } from '../lib/api'
 import type { Page, PurchaseOrder, PurchaseOrderStatus } from '../lib/types'
 import { dateTime, money } from '../lib/format'
 import { useAuth } from '../auth/AuthContext'
 import { CreatePurchaseOrderDialog } from '../components/CreatePurchaseOrderDialog'
-import { Badge, btn, Card, ErrorText, input, Loading, Pagination } from '../components/ui'
+import { PageHeader, Badge, btn, Card, ErrorText, input, Loading, Pagination, rowIn } from '../components/ui'
 
 const STATUSES: PurchaseOrderStatus[] = ['DRAFT', 'ORDERED', 'RECEIVED', 'CANCELLED']
 
@@ -58,10 +60,8 @@ export function PurchaseOrdersPage() {
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <h1 className="text-2xl font-semibold">Purchase orders</h1>
-        {hasRole('MANAGER') && <button className={btn.primary} onClick={() => setCreating(true)}>New order</button>}
-      </div>
+      <PageHeader title="Purchase orders" subtitle="Order from suppliers; receiving an order adds the stock automatically."
+        action={hasRole('MANAGER') && <button className={btn.primary} onClick={() => setCreating(true)}><Plus size={16} />New order</button>} />
 
       <Card>
         <select className={`${input} mb-3 max-w-[200px]`} value={status}
@@ -74,15 +74,15 @@ export function PurchaseOrdersPage() {
           <>
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
-                <thead className="text-left text-slate-500">
+                <thead className="text-left text-xs uppercase tracking-wide text-slate-400">
                   <tr><th className="py-2">#</th><th>Supplier</th><th>Deliver to</th><th>Total</th><th>Status</th><th>Created</th><th /></tr>
                 </thead>
                 <tbody>
-                  {orders.data.content.map((po) => (
+                  {orders.data.content.map((po, i) => (
                     <Fragment key={po.id}>
-                      <tr className="cursor-pointer border-t hover:bg-slate-50"
+                      <motion.tr {...rowIn(i)} className="cursor-pointer border-t border-slate-100 transition-colors hover:bg-indigo-50/40"
                         onClick={() => setExpanded(expanded === po.id ? null : po.id)}>
-                        <td className="py-2">{po.id}</td>
+                        <td className="py-3 font-medium text-slate-500">#{po.id}</td>
                         <td>{po.supplierName}</td>
                         <td>{po.warehouseName}</td>
                         <td>{money(po.totalCost)}</td>
@@ -97,9 +97,9 @@ export function PurchaseOrdersPage() {
                             </button>
                           ))}
                         </td>
-                      </tr>
+                      </motion.tr>
                       {expanded === po.id && (
-                        <tr className="bg-slate-50">
+                        <motion.tr className="bg-slate-50/70" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
                           <td colSpan={7} className="px-4 py-2">
                             <ul className="space-y-1">
                               {po.items.map((i) => (
@@ -111,7 +111,7 @@ export function PurchaseOrdersPage() {
                             </ul>
                             <p className="mt-1 text-xs text-slate-500">Created by {po.createdBy}</p>
                           </td>
-                        </tr>
+                        </motion.tr>
                       )}
                     </Fragment>
                   ))}
