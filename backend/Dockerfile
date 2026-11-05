@@ -19,8 +19,9 @@ FROM eclipse-temurin:21-jre
 WORKDIR /app
 
 # Don't run as root inside the container.
+# USER uses the numeric UID so Kubernetes' runAsNonRoot check can verify it isn't root.
 RUN useradd --system --uid 1001 spring
-USER spring
+USER 1001
 
 COPY --from=build /app/target/*.jar app.jar
 

@@ -25,7 +25,7 @@ spec:
         app: stockpilot-api
     spec:
       securityContext:
-        runAsNonRoot: true         # the Dockerfile already runs as the "spring" user
+        runAsNonRoot: true         # the Dockerfile already runs as the "spring" user (UID 1001)
       containers:
         - name: api
           image: stockpilotacr.azurecr.io/stockpilot-api:latest
