@@ -1,0 +1,16 @@
+# Emergency rollback: puts the API and web Deployments back to their previous version.
+#   ansible-playbook ansible/rollback.yml
+- name: Roll back StockPilot to the previous version
+  hosts: deployer
+  gather_facts: false
+  vars:
+    k8s_namespace: stockpilot
+  tasks:
+    - name: Undo the last rollout
+      ansible.builtin.command: kubectl rollout undo deployment/{{ item }} -n {{ k8s_namespace }}
+      loop: [stockpilot-api, stockpilot-web]
+
+    - name: Wait until the previous version is running again
+      ansible.builtin.command: kubectl rollout status deployment/{{ item }} -n {{ k8s_namespace }} --timeout=300s
+      loop: [stockpilot-api, stockpilot-web]
+      changed_when: false

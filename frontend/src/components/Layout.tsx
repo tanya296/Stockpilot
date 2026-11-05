@@ -3,6 +3,7 @@ import { motion } from 'framer-motion'
 import { ClipboardList, LayoutDashboard, LogOut, Package } from 'lucide-react'
 import { useAuth } from '../auth/AuthContext'
 import { Logo } from './Logo'
+import { VersionTag } from './VersionTag'
 
 const NAV = [
   { to: '/', label: 'Dashboard', icon: LayoutDashboard, end: true },
@@ -62,7 +63,8 @@ export function Layout() {
         <nav className="mt-8 flex flex-col gap-1">
           {NAV.map((n) => <NavItem key={n.to} {...n} pillId="nav-pill-side" />)}
         </nav>
-        <div className="mt-auto border-t border-slate-200 pt-4"><UserChip /></div>
+        <VersionTag className="mt-auto px-2 pb-3" />
+        <div className="border-t border-slate-200 pt-4"><UserChip /></div>
       </aside>
 
       {/* Top bar on phones and small screens */}

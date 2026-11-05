@@ -1,0 +1,58 @@
+# The React frontend, served by nginx, which also forwards /api calls to the backend.
+# Its Service is type LoadBalancer: Azure gives it a public IP - the URL you open in the browser.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: stockpilot-web
+  namespace: stockpilot
+  labels:
+    app: stockpilot-web
+spec:
+  replicas: 2
+  revisionHistoryLimit: 5
+  selector:
+    matchLabels:
+      app: stockpilot-web
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+  template:
+    metadata:
+      labels:
+        app: stockpilot-web
+    spec:
+      securityContext:
+        runAsNonRoot: true       # nginx-unprivileged image
+      containers:
+        - name: web
+          image: stockpilotacr.azurecr.io/stockpilot-web:latest
+          ports:
+            - containerPort: 8080
+              name: http
+          readinessProbe:
+            httpGet: { path: /healthz, port: http }
+            periodSeconds: 5
+          livenessProbe:
+            httpGet: { path: /healthz, port: http }
+            periodSeconds: 10
+          resources:
+            requests: { cpu: 50m, memory: 32Mi }
+            limits: { memory: 128Mi }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: stockpilot-web
+  namespace: stockpilot
+  labels:
+    app: stockpilot-web
+spec:
+  type: LoadBalancer            # public IP from Azure
+  selector:
+    app: stockpilot-web
+  ports:
+    - name: http
+      port: 80
+      targetPort: http

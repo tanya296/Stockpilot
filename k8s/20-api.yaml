@@ -1,0 +1,84 @@
+# The Spring Boot backend.
+# The image tag below is a placeholder: on every push the pipeline (via Ansible) sets it to
+# the exact Git commit it just built, which is what triggers a rolling update.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: stockpilot-api
+  namespace: stockpilot
+  labels:
+    app: stockpilot-api
+spec:
+  replicas: 2
+  revisionHistoryLimit: 5          # keep old versions so "kubectl rollout undo" can go back
+  selector:
+    matchLabels:
+      app: stockpilot-api
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0            # never drop below 2 ready pods during an update
+      maxSurge: 1                  # start one new pod at a time
+  template:
+    metadata:
+      labels:
+        app: stockpilot-api
+    spec:
+      securityContext:
+        runAsNonRoot: true         # the Dockerfile already runs as the "spring" user
+      containers:
+        - name: api
+          image: stockpilotacr.azurecr.io/stockpilot-api:latest
+          ports:
+            - containerPort: 8090
+              name: http
+          env:
+            - name: DB_URL
+              value: jdbc:postgresql://stockpilot-db:5432/stockpilot   # the Service name above
+            - name: DB_USERNAME
+              valueFrom:
+                secretKeyRef: { name: stockpilot-db, key: username }
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef: { name: stockpilot-db, key: password }
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef: { name: stockpilot-app, key: jwt-secret }
+            - name: GIT_SHA
+              value: "local"           # replaced by the pipeline with the deployed commit
+            - name: JAVA_TOOL_OPTIONS
+              value: "-XX:MaxRAMPercentage=75.0"   # let the JVM size itself to the memory limit
+          # Spring Boot takes ~30-60 s to start. The startup probe gives it up to 3 minutes
+          # before the liveness probe is allowed to restart it.
+          startupProbe:
+            httpGet: { path: /actuator/health/liveness, port: http }
+            periodSeconds: 5
+            failureThreshold: 36
+          livenessProbe:
+            httpGet: { path: /actuator/health/liveness, port: http }
+            periodSeconds: 10
+            failureThreshold: 3
+          # Only "ready" pods get traffic, so users never hit a pod that is still starting.
+          readinessProbe:
+            httpGet: { path: /actuator/health/readiness, port: http }
+            periodSeconds: 5
+            failureThreshold: 3
+          resources:
+            requests: { cpu: 250m, memory: 512Mi }
+            limits: { memory: 768Mi }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: stockpilot-api          # nginx in the web pod calls http://stockpilot-api:8090
+  namespace: stockpilot
+  labels:
+    app: stockpilot-api
+spec:
+  type: ClusterIP               # internal only; the public entry point is the web Service
+  selector:
+    app: stockpilot-api
+  ports:
+    - name: http
+      port: 8090
+      targetPort: http

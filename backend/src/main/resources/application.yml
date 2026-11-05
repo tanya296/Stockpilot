@@ -23,6 +23,11 @@ spring:
     locations: classpath:db/migration
 
 app:
+  # Shown by GET /api/info and in the UI. Change it, push, and watch the pipeline roll it out.
+  version: 1.0.0
+  release-note: ${RELEASE_NOTE:First release on Kubernetes}
+  # The pipeline sets GIT_SHA to the commit it built, so you can see exactly what is running.
+  commit: ${GIT_SHA:local}
   jwt:
     # Must be at least 32 characters (256 bits) for HS256.
     secret: ${JWT_SECRET:dev-only-secret-change-me-dev-only-secret-change-me}
@@ -32,3 +37,16 @@ app:
 
 server:
   port: ${PORT:8090}
+  # On shutdown (e.g. during a Kubernetes rolling update) finish in-flight requests first.
+  shutdown: graceful
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      # Adds /actuator/health/liveness and /actuator/health/readiness for Kubernetes.
+      probes:
+        enabled: true

@@ -6,6 +6,7 @@ import { useAuth } from '../auth/AuthContext'
 import { ApiError } from '../lib/api'
 import { btn, Field, input } from '../components/ui'
 import { Logo } from '../components/Logo'
+import { VersionTag } from '../components/VersionTag'
 
 const DEMO = [
   { email: 'admin@stockpilot.dev', label: 'Admin', icon: Shield },
@@ -150,6 +151,7 @@ export function LoginPage() {
               ))}
             </div>
           </div>
+          <VersionTag className="mt-6 text-center" />
         </motion.div>
       </div>
     </div>

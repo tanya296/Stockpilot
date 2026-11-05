@@ -58,6 +58,21 @@ class ApiIntegrationTest {
     }
 
     @Test
+    void infoEndpointIsPublicAndShowsVersion() throws Exception {
+        mvc.perform(get("/api/info"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.app").value("StockPilot"))
+                .andExpect(jsonPath("$.version").isNotEmpty());
+    }
+
+    @Test
+    void healthProbesArePublic() throws Exception {
+        // Kubernetes calls these without a token to decide if a pod is alive / ready for traffic.
+        mvc.perform(get("/actuator/health/liveness")).andExpect(status().isOk());
+        mvc.perform(get("/actuator/health/readiness")).andExpect(status().isOk());
+    }
+
+    @Test
     void wrongPasswordGives401() throws Exception {
         mvc.perform(post("/api/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)

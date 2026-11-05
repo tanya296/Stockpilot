@@ -1,0 +1,82 @@
+# PostgreSQL inside the cluster.
+# A StatefulSet (not a Deployment) because a database needs a stable name and its own disk
+# that survives pod restarts. The password comes from the "stockpilot-db" Secret,
+# which Ansible creates from GitHub secrets - it is never stored in git.
+apiVersion: v1
+kind: Service
+metadata:
+  name: stockpilot-db
+  namespace: stockpilot
+  labels:
+    app: stockpilot-db
+spec:
+  type: ClusterIP            # reachable only from inside the cluster, never from the internet
+  selector:
+    app: stockpilot-db
+  ports:
+    - name: postgres
+      port: 5432
+      targetPort: 5432
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: stockpilot-db
+  namespace: stockpilot
+  labels:
+    app: stockpilot-db
+spec:
+  serviceName: stockpilot-db
+  replicas: 1
+  selector:
+    matchLabels:
+      app: stockpilot-db
+  template:
+    metadata:
+      labels:
+        app: stockpilot-db
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:16-alpine
+          ports:
+            - containerPort: 5432
+              name: postgres
+          env:
+            - name: POSTGRES_DB
+              value: stockpilot
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef: { name: stockpilot-db, key: username }
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef: { name: stockpilot-db, key: password }
+            # A sub-folder, because the mounted disk root contains a "lost+found" folder
+            # that makes Postgres refuse to initialise.
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/postgresql/data
+          readinessProbe:
+            exec:
+              command: ["sh", "-c", "pg_isready -U \"$POSTGRES_USER\" -d stockpilot"]
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          livenessProbe:
+            exec:
+              command: ["sh", "-c", "pg_isready -U \"$POSTGRES_USER\" -d stockpilot"]
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          resources:
+            requests: { cpu: 100m, memory: 256Mi }
+            limits: { memory: 512Mi }
+  # Each replica gets its own persistent disk (an Azure managed disk on AKS).
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: 2Gi

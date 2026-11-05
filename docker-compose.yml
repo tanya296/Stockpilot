@@ -1,6 +1,6 @@
-# Runs the database, or the whole backend, locally.
+# Runs StockPilot locally with Docker - the same images the pipeline deploys to Kubernetes.
 #   docker compose up -d db        -> only Postgres (use this while developing with mvnw)
-#   docker compose up -d --build   -> Postgres + the backend in a container, on http://localhost:8090
+#   docker compose up -d --build   -> Postgres + backend + frontend: open http://localhost:8080
 services:
   db:
     image: postgres:16
@@ -31,6 +31,15 @@ services:
       CORS_ORIGINS: http://localhost:5173
     ports:
       - "8090:8090"
+    networks:
+      default:
+        aliases: [stockpilot-api]   # the name nginx in the web image forwards /api to (same as in Kubernetes)
+
+  web:
+    build: ./frontend
+    depends_on: [api]
+    ports:
+      - "8080:8080"
 
 volumes:
   pgdata:

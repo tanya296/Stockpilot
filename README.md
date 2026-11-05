@@ -96,6 +96,17 @@ cd backend && ./mvnw test
 
 CI runs the backend tests, the frontend build and the Docker image build on every push.
 
+## CI/CD and Kubernetes deployment
+
+Every push to `main` goes through a GitHub Actions pipeline: Maven compiles and tests the backend, the frontend is type-checked and built, both Docker images are tagged with the commit SHA and pushed to Azure Container Registry, and an Ansible playbook rolls them out to Azure Kubernetes Service (AKS) and smoke-tests the public URL.
+
+- Pipeline: [`.github/workflows/ci-cd.yml`](.github/workflows/ci-cd.yml)
+- Kubernetes manifests: [`k8s/`](k8s/) (PostgreSQL StatefulSet, API and web Deployments with probes and rolling updates)
+- Ansible: [`ansible/`](ansible/)
+- Setup guide, demo steps and screenshot checklist: [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md)
+
+Run the full stack locally the same way: `docker compose up -d --build`, then open http://localhost:8080.
+
 ## Future work
 
 Payments, barcode scanning, email notifications for low stock, multi-tenant accounts, and splitting inventory and purchasing into separate services.

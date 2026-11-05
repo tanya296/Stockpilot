@@ -1,0 +1,7 @@
+# Everything StockPilot runs in its own namespace, so it is easy to list, secure and delete.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: stockpilot
+  labels:
+    app.kubernetes.io/part-of: stockpilot
