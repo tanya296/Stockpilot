@@ -1,0 +1,24 @@
+# Gitleaks configuration: scans the code and the full Git history for leaked secrets.
+# Used by the "Secret scan" job in .github/workflows/ci-cd.yml.
+#
+# We keep ALL of Gitleaks' built-in rules (passwords, API keys, cloud credentials,
+# private keys, tokens...) and only allow a few values that are deliberately public:
+# local-development defaults, unit-test keys and the documented demo login.
+# Real secrets never live in the repo: they are GitHub secrets -> Kubernetes Secrets.
+
+title = "StockPilot gitleaks config"
+
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "Known non-secret placeholders (dev defaults, test keys, demo password)"
+# Matched against the value Gitleaks thinks is a secret, not the whole line,
+# so a real secret elsewhere on the same line would still be caught.
+regexes = [
+  '''change-me''',                     # dev defaults in application.yml / docker-compose.yml
+  '''^(unit-)?test-secret[-a-z]*$''',  # JWT keys used only by the tests
+  '''^attacker-secret[-a-z]*$''',      # test that a forged token is rejected
+  '''^Password@123$''',                # demo login documented in README / DEPLOYMENT.md
+  '''^postgres$''',                    # local docker-compose database password
+]

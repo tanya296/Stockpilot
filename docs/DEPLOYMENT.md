@@ -4,6 +4,7 @@ Every push to `main` runs this pipeline (`.github/workflows/ci-cd.yml`):
 
 ```
 git push
+  -> Secret scan: Gitleaks checks the whole Git history for leaked passwords/keys/tokens
   -> Backend: checkout, compile, test (JUnit/Mockito/MockMvc), package (Maven)
   -> Frontend: npm ci, type-check, build
   -> Images: build backend + frontend Docker images, tag with the commit SHA, push to ACR
@@ -19,6 +20,7 @@ git push
 | `ansible/deploy.yml` | Secrets, apply manifests, roll out, verify |
 | `ansible/rollback.yml` | `kubectl rollout undo` for both Deployments |
 | `.github/workflows/ci-cd.yml` | The pipeline |
+| `.gitleaks.toml` | Secret-scan config: all default Gitleaks rules, plus an allowlist for dev/test placeholders |
 
 ---
 
