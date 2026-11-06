@@ -31,7 +31,7 @@ function Stat({ label, value, icon: Icon, tone }: { label: string; value: number
 
 function greeting() {
   const h = new Date().getHours()
-  return h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening'
+  return h < 12 ? 'Good ṅ' : h < 17 ? 'Good afternoon' : 'Good evening'
 }
 
 export function DashboardPage() {
